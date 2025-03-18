@@ -24,22 +24,36 @@ export class LiteLlmHandler implements ApiHandler {
 			content: systemPrompt,
 		}
 		const modelId = this.options.liteLlmModelId || liteLlmDefaultModelId
-		const isOminiModel = modelId.includes("o1-mini") || modelId.includes("o3-mini")
-		let temperature: number | undefined = 0
 
-		if (isOminiModel) {
-			temperature = undefined // does not support temperature
-		}
+		// Check if extended thinking is enabled
+		const budget_tokens = this.options.thinkingBudgetTokens || 0
+		const reasoningOn = budget_tokens > 0
 
-		const stream = await this.client.chat.completions.create({
-			model: this.options.liteLlmModelId || liteLlmDefaultModelId,
+		// Prepare request parameters
+		const requestParams: OpenAI.ChatCompletionCreateParams = {
+			model: modelId,
 			messages: [systemMessage, ...formattedMessages],
-			temperature,
+			// Temperature is not set when using extended thinking
+			// Claude documentation states that temperature is not compatible with thinking
+			temperature: reasoningOn ? undefined : 0,
 			stream: true,
 			stream_options: { include_usage: true },
-		})
+		}
+
+		// Add extended thinking parameters if enabled
+		if (reasoningOn) {
+			// Add thinking parameter for Claude models via LiteLLM
+			// This assumes LiteLLM properly passes this parameter to Claude models
+			;(requestParams as any).thinking = {
+				type: "enabled",
+				budget_tokens: budget_tokens,
+			}
+		}
+
+		const stream = await this.client.chat.completions.create(requestParams)
 
 		for await (const chunk of stream) {
+			// Handle standard text content
 			const delta = chunk.choices[0]?.delta
 			if (delta?.content) {
 				yield {
@@ -48,6 +62,21 @@ export class LiteLlmHandler implements ApiHandler {
 				}
 			}
 
+			// Handle reasoning/thinking content if present
+			// This assumes LiteLLM formats thinking content in a similar way to Anthropic's API
+			if ((chunk as any).delta?.thinking) {
+				yield {
+					type: "reasoning",
+					reasoning: (chunk as any).delta.thinking,
+				}
+			} else if ((chunk as any).content_block?.type === "thinking") {
+				yield {
+					type: "reasoning",
+					reasoning: (chunk as any).content_block.thinking || "",
+				}
+			}
+
+			// Handle usage statistics
 			if (chunk.usage) {
 				yield {
 					type: "usage",

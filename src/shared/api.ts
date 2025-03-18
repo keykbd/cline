@@ -27,6 +27,7 @@ export interface ApiHandlerOptions {
 	liteLlmBaseUrl?: string
 	liteLlmModelId?: string
 	liteLlmApiKey?: string
+	liteLlmModelInfo?: OpenAiCompatibleModelInfo
 	anthropicBaseUrl?: string
 	openRouterApiKey?: string
 	openRouterModelId?: string
@@ -1142,13 +1143,14 @@ export const mistralModels = {
 // https://docs.litellm.ai/docs/
 export type LiteLLMModelId = string
 export const liteLlmDefaultModelId = "gpt-3.5-turbo"
-export const liteLlmModelInfoSaneDefaults: ModelInfo = {
+export const liteLlmModelInfoSaneDefaults: OpenAiCompatibleModelInfo = {
 	maxTokens: -1,
 	contextWindow: 128_000,
 	supportsImages: true,
 	supportsPromptCache: false,
 	inputPrice: 0,
 	outputPrice: 0,
+	temperature: 0,
 }
 
 // AskSage Models

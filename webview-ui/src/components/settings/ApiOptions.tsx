@@ -45,6 +45,7 @@ import {
 	xaiModels,
 	sambanovaModels,
 	sambanovaDefaultModelId,
+	liteLlmModelInfoSaneDefaults,
 } from "../../../../src/shared/api"
 import { ExtensionMessage } from "../../../../src/shared/ExtensionMessage"
 import { useExtensionState } from "../../context/ExtensionStateContext"
@@ -1188,6 +1189,17 @@ const ApiOptions = ({ showModelOptions, apiErrorMessage, modelIdErrorMessage, is
 						placeholder={"e.g. gpt-4"}>
 						<span style={{ fontWeight: 500 }}>Model ID</span>
 					</VSCodeTextField>
+					<ThinkingBudgetSlider apiConfiguration={apiConfiguration} setApiConfiguration={setApiConfiguration} />
+					<p
+						style={{
+							fontSize: "12px",
+							marginTop: "5px",
+							color: "var(--vscode-charts-green)",
+						}}>
+						<i className="codicon codicon-info" style={{ marginRight: 4 }}></i>
+						<span style={{ fontWeight: 500 }}>Note:</span> Extended Thinking is only available with Claude 3.7 Sonnet
+						models. This feature will only be effective when LiteLLM is connected to Claude 3.7 Sonnet.
+					</p>
 					<p
 						style={{
 							fontSize: "12px",
@@ -1649,7 +1661,7 @@ export function normalizeApiConfiguration(apiConfiguration?: ApiConfiguration): 
 			return {
 				selectedProvider: provider,
 				selectedModelId: apiConfiguration?.liteLlmModelId || "",
-				selectedModelInfo: openAiModelInfoSaneDefaults,
+				selectedModelInfo: apiConfiguration?.liteLlmModelInfo || liteLlmModelInfoSaneDefaults,
 			}
 		case "xai":
 			return getProviderData(xaiModels, xaiDefaultModelId)
